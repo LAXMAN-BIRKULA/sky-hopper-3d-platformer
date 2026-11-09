@@ -1,0 +1,18 @@
+Wheat & Co. - texture credits
+================================
+
+All textures below are CC0 (public domain) from ambientCG.com.
+Downloaded as 1K JPG material packages; only color and normal maps are kept.
+
+  Grass004_1K-JPG           - lawn / ground cover
+  Ground048_1K-JPG          - tilled soil / worn dirt
+  PavingStones138_1K-JPG    - cobblestone paths
+  Planks037A_1K-JPG         - barn siding, fences, wooden props
+  Rock064_1K-JPG            - stone, foundations, rocks
+  RoofingTiles012A_1K-JPG   - barn and coop roofs
+  Bark012_1K-JPG            - tree trunks
+  Fabric086_1K-JPG          - market canopy cloth
+
+License: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+Source:  https://ambientcg.com/
+No attribution is required, but credit is kept here for provenance.
