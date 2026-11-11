@@ -1016,7 +1016,7 @@ MonoBehaviour:
   distance: 7.5
   minDistance: 3
   maxDistance: 13
-  pivotHeight: 1.24
+  pivotHeight: 0.82895386
   yaw: 0
   pitch: 22
   minPitch: 4
