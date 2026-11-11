@@ -10,6 +10,7 @@ namespace SkyHopper
     {
         public static PlatformerGame I { get; private set; }
         public static bool IsDead => I != null && I.dead;
+        public static bool IsWon => I != null && I.won;
 
         [Header("Rules")]
         public float killY = -12f;
@@ -27,10 +28,17 @@ namespace SkyHopper
         public Text finalScoreText;
         public Text deathHintText;
 
+        [Header("Win screen")]
+        public GameObject winPanel;
+        public Text winSubtitleText;
+        public Text winScoreText;
+        public Text winHintText;
+
         public int Score { get; private set; }
         public int CoinsCollected { get; private set; }
 
         bool dead;
+        bool won;
 
         void Awake()
         {
@@ -43,11 +51,18 @@ namespace SkyHopper
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             if (deathPanel != null) deathPanel.SetActive(false);
+            if (winPanel != null) winPanel.SetActive(false);
             RefreshHud();
         }
 
         void Update()
         {
+            if (won)
+            {
+                if (RestartPressed()) Restart();
+                return;
+            }
+
             if (!dead)
             {
                 if (player != null && player.transform.position.y < killY) Die();
@@ -59,15 +74,17 @@ namespace SkyHopper
 
         public void CollectCoin(int points)
         {
-            if (dead) return;
+            if (dead || won) return;
             Score += points;
             CoinsCollected++;
             RefreshHud();
+
+            if (CoinsCollected >= totalCoins) Win();
         }
 
         public void Die()
         {
-            if (dead) return;
+            if (dead || won) return;
             dead = true;
 
             if (player != null) player.InputEnabled = false;
@@ -81,6 +98,23 @@ namespace SkyHopper
                 deathHintText.text = "Press  R  or  Space  to restart";
 
             Sfx.Play(Sfx.DeathClip, transform.position, 0.7f);
+        }
+
+        public void Win()
+        {
+            if (dead || won) return;
+            won = true;
+
+            if (player != null) player.InputEnabled = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            if (winPanel != null) winPanel.SetActive(true);
+            if (winSubtitleText != null) winSubtitleText.text = "ALL " + totalCoins + " COINS COLLECTED";
+            if (winScoreText != null) winScoreText.text = "FINAL SCORE   " + Score;
+            if (winHintText != null) winHintText.text = "Press  R  or  Space  to play again";
+
+            Sfx.Play(Sfx.WinClip, transform.position, 0.7f);
         }
 
         public void Restart()

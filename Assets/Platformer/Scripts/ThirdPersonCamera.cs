@@ -47,7 +47,7 @@ namespace SkyHopper
                     distance = Mathf.Clamp(distance - scroll * 0.01f, minDistance, maxDistance);
 
                 if (mouse.leftButton.wasPressedThisFrame &&
-                    Cursor.lockState != CursorLockMode.Locked && !PlatformerGame.IsDead)
+                    Cursor.lockState != CursorLockMode.Locked && !PlatformerGame.IsDead && !PlatformerGame.IsWon)
                     Cursor.lockState = CursorLockMode.Locked;
             }
 

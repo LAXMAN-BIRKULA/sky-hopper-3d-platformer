@@ -14,6 +14,7 @@ namespace SkyHopper
         static AudioClip coinClip;
         static AudioClip jumpClip;
         static AudioClip deathClip;
+        static AudioClip winClip;
 
         public static AudioClip CoinClip => coinClip != null
             ? coinClip
@@ -42,6 +43,19 @@ namespace SkyHopper
                 float f = 420f * Mathf.Exp(-t * 2.2f) + 55f;
                 return (Mathf.Sin(2f * Mathf.PI * f * t) * 0.5f +
                         Mathf.Sin(2f * Mathf.PI * f * 0.5f * t) * 0.25f) * env;
+            });
+
+        public static AudioClip WinClip => winClip != null
+            ? winClip
+            : winClip = Make("Win", 1.0f, t =>
+            {
+                // Rising four-note fanfare (C5 E5 G5 C6).
+                int note = Mathf.Clamp(Mathf.FloorToInt(t / 0.18f), 0, 3);
+                float localT = t - note * 0.18f;
+                float freq = note == 0 ? 523.25f : note == 1 ? 659.25f : note == 2 ? 783.99f : 1046.50f;
+                float env = Mathf.Exp(-localT * 7f) * Mathf.Clamp01(localT * 200f);
+                return (Mathf.Sin(2f * Mathf.PI * freq * t) * 0.45f +
+                        Mathf.Sin(2f * Mathf.PI * freq * 2f * t) * 0.12f) * env;
             });
 
         public static void Play(AudioClip clip, Vector3 position, float volume = 0.6f)
