@@ -27,6 +27,10 @@ namespace SkyHopper
         [Header("Animation")]
         public Animator animator;
         public Transform model;
+        /// <summary>World speed the Run clip covers at 1x playback (measured stance speed).</summary>
+        public float runAnimReferenceSpeed = 2.81f;
+        /// <summary>Highest Run playback multiplier, to avoid an absurdly fast cycle.</summary>
+        public float runAnimMaxSpeed = 2.4f;
 
         CharacterController controller;
         Vector3 horizontalVelocity;
@@ -125,9 +129,17 @@ namespace SkyHopper
             if (animator == null) return;
             Vector3 planarVelocity = controller.velocity;
             planarVelocity.y = 0f;
-            animator.SetFloat("Speed", planarVelocity.magnitude, 0.08f, dt);
+            float planarSpeed = planarVelocity.magnitude;
+
+            animator.SetFloat("Speed", planarSpeed, 0.08f, dt);
             animator.SetBool("Grounded", IsGrounded);
             animator.SetFloat("VerticalSpeed", verticalVelocity);
+
+            // Stride matching: play the Run cycle faster as the character
+            // moves faster, so the planted foot stays put instead of sliding.
+            float runRate = Mathf.Clamp(planarSpeed / Mathf.Max(0.01f, runAnimReferenceSpeed),
+                0.5f, runAnimMaxSpeed);
+            animator.SetFloat("RunSpeed", runRate, 0.08f, dt);
         }
 
         bool CheckGrounded()
