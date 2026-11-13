@@ -28,10 +28,10 @@ namespace SkyHopper
         public Animator animator;
         public Transform model;
         /// <summary>
-        /// World speed the Run clip covers at 1x playback. Measured from the planted foot:
-        /// it travels backwards at 5.92 m/s in the clip's own space (see Character.fbx Run).
+        /// World speed the Run clip covers at 1x playback, measured from the planted foot
+        /// (toe contact) on the Man Animated Run clip at the player's final visual scale.
         /// </summary>
-        public float runAnimReferenceSpeed = 5.92f;
+        public float runAnimReferenceSpeed = 6.4917f;
         /// <summary>Highest Run playback multiplier, to avoid an absurdly fast cycle.</summary>
         public float runAnimMaxSpeed = 1.6f;
 
