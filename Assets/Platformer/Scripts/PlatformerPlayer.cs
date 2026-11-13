@@ -27,10 +27,13 @@ namespace SkyHopper
         [Header("Animation")]
         public Animator animator;
         public Transform model;
-        /// <summary>World speed the Run clip covers at 1x playback (measured stance speed).</summary>
-        public float runAnimReferenceSpeed = 2.81f;
+        /// <summary>
+        /// World speed the Run clip covers at 1x playback. Measured from the planted foot:
+        /// it travels backwards at 5.92 m/s in the clip's own space (see Character.fbx Run).
+        /// </summary>
+        public float runAnimReferenceSpeed = 5.92f;
         /// <summary>Highest Run playback multiplier, to avoid an absurdly fast cycle.</summary>
-        public float runAnimMaxSpeed = 2.4f;
+        public float runAnimMaxSpeed = 1.6f;
 
         CharacterController controller;
         Vector3 horizontalVelocity;
@@ -138,7 +141,7 @@ namespace SkyHopper
             // Stride matching: play the Run cycle faster as the character
             // moves faster, so the planted foot stays put instead of sliding.
             float runRate = Mathf.Clamp(planarSpeed / Mathf.Max(0.01f, runAnimReferenceSpeed),
-                0.5f, runAnimMaxSpeed);
+                0.6f, runAnimMaxSpeed);
             animator.SetFloat("RunSpeed", runRate, 0.08f, dt);
         }
 

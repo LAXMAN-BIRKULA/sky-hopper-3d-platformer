@@ -85,6 +85,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   animator: {fileID: 7808185553977808535}
   model: {fileID: 2953505248826481628}
+  runAnimReferenceSpeed: 5.92
+  runAnimMaxSpeed: 1.6
 --- !u!1001 &3420004656086039607
 PrefabInstance:
   m_ObjectHideFlags: 0
