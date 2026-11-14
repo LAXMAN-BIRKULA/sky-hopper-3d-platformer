@@ -14,6 +14,8 @@ namespace SkyHopper
 
         [Header("Rules")]
         public float killY = -12f;
+        /// <summary>Below every walkable surface. Dropping past this means the player is falling off the course.</summary>
+        public float fallDeathY = 0.2f;
         public int totalCoins = 12;
 
         [Header("Scene references")]
@@ -39,11 +41,12 @@ namespace SkyHopper
 
         bool dead;
         bool won;
+        bool deathAnimPlayed;
 
         void Awake()
         {
             I = this;
-            if (player == null) player = FindFirstObjectByType<PlatformerPlayer>();
+            if (player == null) player = FindAnyObjectByType<PlatformerPlayer>();
         }
 
         void Start()
@@ -65,7 +68,18 @@ namespace SkyHopper
 
             if (!dead)
             {
-                if (player != null && player.transform.position.y < killY) Die();
+                if (player != null)
+                {
+                    // The moment he drops below the course, start the death animation so
+                    // it plays visibly during the fall. The screen comes at killY.
+                    if (!deathAnimPlayed && player.transform.position.y < fallDeathY)
+                    {
+                        deathAnimPlayed = true;
+                        player.PlayDeathAnimation();
+                    }
+
+                    if (player.transform.position.y < killY) Die();
+                }
                 return;
             }
 
@@ -87,7 +101,12 @@ namespace SkyHopper
             if (dead || won) return;
             dead = true;
 
-            if (player != null) player.InputEnabled = false;
+            if (player != null)
+            {
+                // Fallback for any death that did not pass through the fall threshold.
+                player.PlayDeathAnimation();
+                player.InputEnabled = false;
+            }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 

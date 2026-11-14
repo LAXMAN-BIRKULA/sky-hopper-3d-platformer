@@ -65,6 +65,19 @@ namespace SkyHopper
             if (model == null && animator != null) model = animator.transform;
         }
 
+        bool deathAnimationPlayed;
+
+        /// <summary>Plays the Death clip (fall death). Safe to call more than once.</summary>
+        public void PlayDeathAnimation()
+        {
+            if (animator == null || deathAnimationPlayed) return;
+            deathAnimationPlayed = true;
+
+            // Direct state play is reliable here; the Any State trigger transition was not
+            // firing for this avatar-less generic rig.
+            animator.Play("Death", 0, 0f);
+        }
+
         void Update()
         {
             float dt = Time.deltaTime;
@@ -95,7 +108,9 @@ namespace SkyHopper
                 jumpBufferTimer = 0f;
                 coyoteTimer = 0f;
                 IsGrounded = false;
-                if (animator != null) animator.SetTrigger("Jump");
+                // Crossfade straight into the Jump state instead of using a trigger: a queued
+                // trigger survives while already in Jump and then replays the clip after landing.
+                if (animator != null) animator.CrossFadeInFixedTime("Jump", 0.05f, 0, 0f);
                 Sfx.Play(Sfx.JumpClip, transform.position, 0.35f);
             }
 
