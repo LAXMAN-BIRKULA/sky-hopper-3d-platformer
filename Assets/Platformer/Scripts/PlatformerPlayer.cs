@@ -46,6 +46,12 @@ namespace SkyHopper
         bool spaceWasDown;
         bool inputEnabled = true;
 
+        // Short window after stepping off a ladder where the player keeps moving forward
+        // onto the platform and cannot immediately re-grab the same ladder.
+        float dismountTimer;
+        Vector3 dismountVelocity;
+        float ladderCooldownUntil;
+
         public bool IsGrounded { get; private set; }
         public Ladder ActiveLadder { get; private set; }
         public bool IsClimbing => ActiveLadder != null;
@@ -53,7 +59,14 @@ namespace SkyHopper
 
         public void EnterLadder(Ladder ladder)
         {
-            if (ladder != null) ActiveLadder = ladder;
+            if (ladder == null) return;
+            // Just stepped off the top: ignore the ladder until we are clear of it.
+            if (Time.time < ladderCooldownUntil) return;
+            ActiveLadder = ladder;
+            // Grabbing a ladder cancels any buffered jump so Space becomes "climb".
+            jumpBufferTimer = 0f;
+            verticalVelocity = 0f;
+            dismountTimer = 0f;
         }
 
         public void ExitLadder(Ladder ladder)
@@ -128,7 +141,7 @@ namespace SkyHopper
 
             if (IsClimbing)
             {
-                UpdateClimb(dt, input, wishDirection);
+                UpdateClimb(dt, input, wishDirection, spaceDown);
                 return;
             }
 
@@ -148,27 +161,63 @@ namespace SkyHopper
                 Sfx.Play(Sfx.JumpClip, transform.position, 0.35f);
             }
 
-            float control = IsGrounded ? 1f : airControl;
-            Vector3 targetVelocity = wishDirection * moveSpeed;
-            horizontalVelocity = Vector3.MoveTowards(
-                horizontalVelocity, targetVelocity, acceleration * control * dt);
-
-            if (wishDirection.sqrMagnitude > 0.001f)
+            if (dismountTimer > 0f)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(wishDirection, Vector3.up);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation,
-                    1f - Mathf.Exp(-turnSpeed * dt));
+                // Just stepped off a ladder: glide forward onto the platform.
+                dismountTimer -= dt;
+                horizontalVelocity = dismountVelocity;
+            }
+            else
+            {
+                float control = IsGrounded ? 1f : airControl;
+                Vector3 targetVelocity = wishDirection * moveSpeed;
+                horizontalVelocity = Vector3.MoveTowards(
+                    horizontalVelocity, targetVelocity, acceleration * control * dt);
+
+                if (wishDirection.sqrMagnitude > 0.001f)
+                {
+                    Quaternion targetRotation = Quaternion.LookRotation(wishDirection, Vector3.up);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation,
+                        1f - Mathf.Exp(-turnSpeed * dt));
+                }
             }
 
             ApplyGravityAndMove(dt, false);
             UpdateAnimator(dt);
         }
 
-        void UpdateClimb(float dt, Vector2 input, Vector3 wishDirection)
+        void UpdateClimb(float dt, Vector2 input, Vector3 wishDirection, bool spaceHeld)
         {
-            // No gravity on a ladder: forward/back input moves straight up or down,
-            // while a little horizontal control lets him step off at the top.
-            verticalVelocity = input.y * climbSpeed;
+            // No gravity on a ladder. W / forward climbs up, S / back climbs down,
+            // and holding Space climbs up too, so the jump key doubles as "grab & climb".
+            jumpBufferTimer = 0f;
+            float climb = input.y;
+            if (spaceHeld) climb = Mathf.Max(climb, 1f);
+
+            Ladder ladder = ActiveLadder;
+            if (climb > 0.1f && ladder != null && ladder.exitHeight > 0f &&
+                transform.position.y >= ladder.exitHeight)
+            {
+                // Top of the ladder: step off onto the platform instead of hanging there.
+                Vector3 exitDirection = ladder.exitDirection;
+                exitDirection.y = 0f;
+                if (exitDirection.sqrMagnitude < 0.001f) exitDirection = transform.forward;
+                exitDirection.Normalize();
+
+                ActiveLadder = null;
+                dismountVelocity = exitDirection * Mathf.Max(moveSpeed * 0.6f, 2.5f);
+                horizontalVelocity = dismountVelocity;
+                dismountTimer = 0.45f;
+                ladderCooldownUntil = Time.time + 0.8f;
+                verticalVelocity = 2f;
+                IsGrounded = false;
+                transform.rotation = Quaternion.LookRotation(exitDirection, Vector3.up);
+                if (animator != null) animator.CrossFadeInFixedTime("Jump", 0.05f, 0, 0f);
+                UpdateAnimator(dt, true);
+                return;
+            }
+
+            verticalVelocity = climb * climbSpeed;
 
             Vector3 target = wishDirection * (moveSpeed * 0.3f);
             horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, target, acceleration * dt);
@@ -180,16 +229,6 @@ namespace SkyHopper
                 Quaternion targetRotation = Quaternion.LookRotation(wishDirection, Vector3.up);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation,
                     1f - Mathf.Exp(-turnSpeed * dt));
-            }
-
-            if (jumpBufferTimer > 0f)
-            {
-                jumpBufferTimer = 0f;
-                ActiveLadder = null;
-                verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
-                IsGrounded = false;
-                if (animator != null) animator.CrossFadeInFixedTime("Jump", 0.05f, 0, 0f);
-                Sfx.Play(Sfx.JumpClip, transform.position, 0.35f);
             }
 
             UpdateAnimator(dt, true);
