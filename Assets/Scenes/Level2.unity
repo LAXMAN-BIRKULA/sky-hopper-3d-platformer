@@ -2664,7 +2664,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: WASD / Arrows  move      Space  jump / climb ladder      Mouse  look & zoom      R  restart
+  m_Text: WASD / Arrows  move / climb      Space  jump      Mouse  look & zoom      R  restart
 --- !u!222 &458987852
 CanvasRenderer:
   m_ObjectHideFlags: 0

@@ -139,6 +139,15 @@ namespace SkyHopper
                 jumpBufferTimer -= dt;
             spaceWasDown = spaceDown;
 
+            // Walking into the ladder (or holding Space near it) grabs it, so simply
+            // heading for the ladder starts the climb instead of walking through it.
+            bool wantsLadder = spaceDown || (input.sqrMagnitude > 0.01f && input.y > -0.1f);
+            if (!IsClimbing && wantsLadder && Time.time >= ladderCooldownUntil && dismountTimer <= 0f)
+            {
+                Ladder near = Ladder.FindFor(transform.position, IsGrounded);
+                if (near != null) EnterLadder(near);
+            }
+
             if (IsClimbing)
             {
                 UpdateClimb(dt, input, wishDirection, spaceDown);
@@ -192,9 +201,19 @@ namespace SkyHopper
             // and holding Space climbs up too, so the jump key doubles as "grab & climb".
             jumpBufferTimer = 0f;
             float climb = input.y;
+            // Any movement key (other than backing down with S) keeps the climb going up.
+            if (climb > -0.1f && input.sqrMagnitude > 0.04f) climb = Mathf.Max(climb, 1f);
             if (spaceHeld) climb = Mathf.Max(climb, 1f);
 
             Ladder ladder = ActiveLadder;
+            if (ladder != null && !ladder.Contains(transform.position))
+            {
+                // Walked out of the ladder zone: let go and resume normal movement.
+                ActiveLadder = null;
+                UpdateAnimator(dt, true);
+                return;
+            }
+
             if (climb > 0.1f && ladder != null && ladder.exitHeight > 0f &&
                 transform.position.y >= ladder.exitHeight)
             {
