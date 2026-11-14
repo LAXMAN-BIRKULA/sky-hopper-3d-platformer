@@ -24,6 +24,9 @@ namespace SkyHopper
         public float groundCheckDistance = 0.25f;
         public LayerMask groundMask = ~0;
 
+        [Header("Ladder")]
+        public float climbSpeed = 3.4f;
+
         [Header("Animation")]
         public Animator animator;
         public Transform model;
@@ -44,6 +47,31 @@ namespace SkyHopper
         bool inputEnabled = true;
 
         public bool IsGrounded { get; private set; }
+        public Ladder ActiveLadder { get; private set; }
+        public bool IsClimbing => ActiveLadder != null;
+        public float VerticalVelocity => verticalVelocity;
+
+        public void EnterLadder(Ladder ladder)
+        {
+            if (ladder != null) ActiveLadder = ladder;
+        }
+
+        public void ExitLadder(Ladder ladder)
+        {
+            if (ActiveLadder == ladder) ActiveLadder = null;
+        }
+
+        /// <summary>Kick the player upward (bouncer pads).</summary>
+        public void Launch(float speed)
+        {
+            verticalVelocity = Mathf.Max(verticalVelocity, speed);
+            jumpBufferTimer = 0f;
+            coyoteTimer = 0f;
+            IsGrounded = false;
+            if (animator != null) animator.CrossFadeInFixedTime("Jump", 0.05f, 0, 0f);
+            Sfx.Play(Sfx.JumpClip, transform.position, 0.4f);
+        }
+
         public bool InputEnabled
         {
             get => inputEnabled;
@@ -98,6 +126,12 @@ namespace SkyHopper
                 jumpBufferTimer -= dt;
             spaceWasDown = spaceDown;
 
+            if (IsClimbing)
+            {
+                UpdateClimb(dt, input, wishDirection);
+                return;
+            }
+
             IsGrounded = CheckGrounded();
             if (IsGrounded) coyoteTimer = coyoteTime;
             else coyoteTimer -= dt;
@@ -130,6 +164,37 @@ namespace SkyHopper
             UpdateAnimator(dt);
         }
 
+        void UpdateClimb(float dt, Vector2 input, Vector3 wishDirection)
+        {
+            // No gravity on a ladder: forward/back input moves straight up or down,
+            // while a little horizontal control lets him step off at the top.
+            verticalVelocity = input.y * climbSpeed;
+
+            Vector3 target = wishDirection * (moveSpeed * 0.3f);
+            horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, target, acceleration * dt);
+            controller.Move((horizontalVelocity + Vector3.up * verticalVelocity) * dt);
+            IsGrounded = controller.isGrounded;
+
+            if (wishDirection.sqrMagnitude > 0.001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(wishDirection, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation,
+                    1f - Mathf.Exp(-turnSpeed * dt));
+            }
+
+            if (jumpBufferTimer > 0f)
+            {
+                jumpBufferTimer = 0f;
+                ActiveLadder = null;
+                verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                IsGrounded = false;
+                if (animator != null) animator.CrossFadeInFixedTime("Jump", 0.05f, 0, 0f);
+                Sfx.Play(Sfx.JumpClip, transform.position, 0.35f);
+            }
+
+            UpdateAnimator(dt, true);
+        }
+
         void ApplyGravityAndMove(float dt, bool frozen)
         {
             if (IsGrounded && verticalVelocity < 0f) verticalVelocity = -2f;
@@ -142,21 +207,22 @@ namespace SkyHopper
             IsGrounded = controller.isGrounded;
         }
 
-        void UpdateAnimator(float dt)
+        void UpdateAnimator(float dt, bool climbing = false)
         {
             if (animator == null) return;
             Vector3 planarVelocity = controller.velocity;
             planarVelocity.y = 0f;
-            float planarSpeed = planarVelocity.magnitude;
+            float planarSpeed = climbing ? 1.5f : planarVelocity.magnitude;
 
             animator.SetFloat("Speed", planarSpeed, 0.08f, dt);
-            animator.SetBool("Grounded", IsGrounded);
+            animator.SetBool("Grounded", climbing ? false : IsGrounded);
             animator.SetFloat("VerticalSpeed", verticalVelocity);
 
             // Stride matching: play the Run cycle faster as the character
             // moves faster, so the planted foot stays put instead of sliding.
-            float runRate = Mathf.Clamp(planarSpeed / Mathf.Max(0.01f, runAnimReferenceSpeed),
-                0.6f, runAnimMaxSpeed);
+            float runRate = climbing
+                ? 0.9f
+                : Mathf.Clamp(planarSpeed / Mathf.Max(0.01f, runAnimReferenceSpeed), 0.6f, runAnimMaxSpeed);
             animator.SetFloat("RunSpeed", runRate, 0.08f, dt);
         }
 
