@@ -60,11 +60,8 @@ namespace SkyHopper
 
         void Update()
         {
-            if (won)
-            {
-                if (RestartPressed()) Restart();
-                return;
-            }
+            // The win screen is owned by LevelCompleteMenu (buttons + shortcuts).
+            if (won) return;
 
             if (!dead)
             {
@@ -131,7 +128,7 @@ namespace SkyHopper
             if (winPanel != null) winPanel.SetActive(true);
             if (winSubtitleText != null) winSubtitleText.text = "ALL " + totalCoins + " COINS COLLECTED";
             if (winScoreText != null) winScoreText.text = "FINAL SCORE   " + Score;
-            if (winHintText != null) winHintText.text = "Press  R  or  Space  to play again";
+            // winHintText is filled in by LevelCompleteMenu when the panel is enabled.
 
             Sfx.Play(Sfx.WinClip, transform.position, 0.7f);
         }
