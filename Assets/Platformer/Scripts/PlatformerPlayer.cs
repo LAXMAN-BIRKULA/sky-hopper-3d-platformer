@@ -66,6 +66,8 @@ namespace SkyHopper
             // Grabbing a ladder cancels any buffered jump so Space becomes "climb".
             jumpBufferTimer = 0f;
             verticalVelocity = 0f;
+            // Drop any running speed so he hangs on the ladder instead of drifting into it.
+            horizontalVelocity = Vector3.zero;
             dismountTimer = 0f;
         }
 
@@ -210,7 +212,7 @@ namespace SkyHopper
             {
                 // Walked out of the ladder zone: let go and resume normal movement.
                 ActiveLadder = null;
-                UpdateAnimator(dt, true);
+                UpdateAnimator(dt);
                 return;
             }
 
@@ -232,16 +234,33 @@ namespace SkyHopper
                 IsGrounded = false;
                 transform.rotation = Quaternion.LookRotation(exitDirection, Vector3.up);
                 if (animator != null) animator.CrossFadeInFixedTime("Jump", 0.05f, 0, 0f);
-                UpdateAnimator(dt, true);
+                UpdateAnimator(dt);
                 return;
             }
 
             verticalVelocity = climb * climbSpeed;
 
-            Vector3 target = wishDirection * (moveSpeed * 0.3f);
-            horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, target, acceleration * dt);
+            // Climb straight along the ladder instead of drifting with the movement keys.
+            // Pushing forward used to walk him under the floating platform, where he got
+            // wedged and then fell through it.
+            Vector3 climbPoint = ladder != null
+                ? ladder.ClimbLine(transform.position, WorldRadius() + 0.05f)
+                : transform.position;
+            Vector3 lateral = climbPoint - transform.position;
+            lateral.y = 0f;
+            horizontalVelocity = Vector3.ClampMagnitude(lateral * 8f, 1.5f);
+
             controller.Move((horizontalVelocity + Vector3.up * verticalVelocity) * dt);
             IsGrounded = controller.isGrounded;
+
+            // Climbing down onto the floor: let go so he can walk away from the ladder.
+            if (climb < -0.1f && IsGrounded)
+            {
+                ActiveLadder = null;
+                verticalVelocity = -2f;
+                UpdateAnimator(dt);
+                return;
+            }
 
             if (wishDirection.sqrMagnitude > 0.001f)
             {
@@ -268,19 +287,29 @@ namespace SkyHopper
         void UpdateAnimator(float dt, bool climbing = false)
         {
             if (animator == null) return;
+
+            // Hanging on a ladder: stay in the idle pose instead of running in place.
+            if (climbing)
+            {
+                animator.SetFloat("Speed", 0f, 0.1f, dt);
+                // Grounded=true also blends out of the Jump clip if he grabbed the ladder mid-air.
+                animator.SetBool("Grounded", true);
+                animator.SetFloat("VerticalSpeed", 0f);
+                animator.SetFloat("RunSpeed", 0f, 0.1f, dt);
+                return;
+            }
+
             Vector3 planarVelocity = controller.velocity;
             planarVelocity.y = 0f;
-            float planarSpeed = climbing ? 1.5f : planarVelocity.magnitude;
+            float planarSpeed = planarVelocity.magnitude;
 
             animator.SetFloat("Speed", planarSpeed, 0.08f, dt);
-            animator.SetBool("Grounded", climbing ? false : IsGrounded);
+            animator.SetBool("Grounded", IsGrounded);
             animator.SetFloat("VerticalSpeed", verticalVelocity);
 
             // Stride matching: play the Run cycle faster as the character
             // moves faster, so the planted foot stays put instead of sliding.
-            float runRate = climbing
-                ? 0.9f
-                : Mathf.Clamp(planarSpeed / Mathf.Max(0.01f, runAnimReferenceSpeed), 0.6f, runAnimMaxSpeed);
+            float runRate = Mathf.Clamp(planarSpeed / Mathf.Max(0.01f, runAnimReferenceSpeed), 0.6f, runAnimMaxSpeed);
             animator.SetFloat("RunSpeed", runRate, 0.08f, dt);
         }
 
@@ -293,6 +322,13 @@ namespace SkyHopper
             float distance = controller.height * 0.5f - radius + groundCheckDistance;
             return Physics.SphereCast(origin, radius, Vector3.down, out _, distance,
                 groundMask, QueryTriggerInteraction.Ignore);
+        }
+
+        /// <summary>Character radius in world units (the controller scales with the model).</summary>
+        float WorldRadius()
+        {
+            Vector3 scale = transform.lossyScale;
+            return controller.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
         }
 
         static Vector2 ReadMoveInput()

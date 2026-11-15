@@ -46,6 +46,26 @@ namespace SkyHopper
             return bounds.Contains(worldPosition);
         }
 
+        /// <summary>
+        /// Horizontal point the player climbs along: the ladder's centre line, shifted to the
+        /// approach side (away from <see cref="exitDirection"/>) so the body clears the
+        /// platform the ladder is mounted on.
+        /// </summary>
+        public Vector3 ClimbLine(Vector3 from, float clearance)
+        {
+            if (zone == null) return from;
+
+            Bounds bounds = zone.bounds;
+            Vector3 away = exitDirection;
+            away.y = 0f;
+            if (away.sqrMagnitude < 0.0001f) away = Vector3.forward;
+            away.Normalize();
+
+            Vector3 point = bounds.center - away * Mathf.Max(0f, clearance);
+            point.y = from.y;
+            return point;
+        }
+
         /// <summary>True when the player at this position can grab this ladder.</summary>
         public bool CanGrab(Vector3 worldPosition, bool grounded)
         {
