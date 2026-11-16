@@ -16,6 +16,12 @@ namespace SkyHopper
             SceneManager.LoadScene("Level2");
         }
 
+        /// <summary>Closes the game (the QUIT GAME button on the menu).</summary>
+        public void QuitGame()
+        {
+            AppQuit.Quit();
+        }
+
         void Update()
         {
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
@@ -23,6 +29,7 @@ namespace SkyHopper
 
             if (keyboard.digit1Key.wasPressedThisFrame) PlayLevel1();
             else if (keyboard.digit2Key.wasPressedThisFrame) PlayLevel2();
+            else if (keyboard.qKey.wasPressedThisFrame) QuitGame();
         }
     }
 }

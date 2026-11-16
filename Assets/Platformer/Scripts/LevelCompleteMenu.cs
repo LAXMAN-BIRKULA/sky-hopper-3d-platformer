@@ -22,6 +22,7 @@ namespace SkyHopper
         public Button nextButton;
         public Button restartButton;
         public Button quitButton;
+        public Button quitGameButton;
         public Text hintText;
 
         bool HasNext => !string.IsNullOrEmpty(nextLevelScene);
@@ -31,10 +32,11 @@ namespace SkyHopper
             if (nextButton != null) nextButton.gameObject.SetActive(HasNext);
 
             // Keep whichever buttons are visible centered in one row (level 2 has no NEXT).
-            var row = new List<Button>(3);
+            var row = new List<Button>(4);
             if (HasNext) row.Add(nextButton);
             row.Add(restartButton);
             row.Add(quitButton);
+            if (quitGameButton != null) row.Add(quitGameButton);
 
             const float spacing = 380f;
             for (int i = 0; i < row.Count; i++)
@@ -46,8 +48,8 @@ namespace SkyHopper
 
             if (hintText != null)
                 hintText.text = HasNext
-                    ? "N  next level      R  restart      Q  quit"
-                    : "R  restart      Q  quit";
+                    ? "N  next      R  restart      L  levels      Q  quit"
+                    : "R  restart      L  levels      Q  quit";
 
             // Select the first choice so arrows + Enter also work without a mouse.
             if (EventSystem.current != null)
@@ -63,7 +65,8 @@ namespace SkyHopper
             if (selected == gameObject ||
                 (nextButton != null && selected == nextButton.gameObject) ||
                 (restartButton != null && selected == restartButton.gameObject) ||
-                (quitButton != null && selected == quitButton.gameObject))
+                (quitButton != null && selected == quitButton.gameObject) ||
+                (quitGameButton != null && selected == quitGameButton.gameObject))
             {
                 current.SetSelectedGameObject(null);
             }
@@ -79,8 +82,10 @@ namespace SkyHopper
                 NextLevel();
             else if (keyboard.rKey.wasPressedThisFrame)
                 RestartLevel();
-            else if (keyboard.qKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)
+            else if (keyboard.lKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame)
                 QuitToMenu();
+            else if (keyboard.qKey.wasPressedThisFrame)
+                QuitGame();
         }
 
         public void NextLevel()
@@ -98,6 +103,12 @@ namespace SkyHopper
         public void QuitToMenu()
         {
             LoadScene(MenuSceneName);
+        }
+
+        /// <summary>Closes the whole game from the win screen.</summary>
+        public void QuitGame()
+        {
+            AppQuit.Quit();
         }
 
         static void LoadScene(string sceneName)

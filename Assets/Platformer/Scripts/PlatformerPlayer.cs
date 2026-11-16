@@ -134,7 +134,7 @@ namespace SkyHopper
             Vector2 input = ReadMoveInput();
             Vector3 wishDirection = CameraRelative(input);
 
-            bool spaceDown = Keyboard.current != null && Keyboard.current.spaceKey.isPressed;
+            bool spaceDown = (Keyboard.current != null && Keyboard.current.spaceKey.isPressed) || MobileInput.JumpHeld;
             if (spaceDown && !spaceWasDown)
                 jumpBufferTimer = jumpBufferTime;
             else
@@ -333,14 +333,17 @@ namespace SkyHopper
 
         static Vector2 ReadMoveInput()
         {
-            Keyboard kb = Keyboard.current;
-            if (kb == null) return Vector2.zero;
+            Vector2 input = MobileInput.Move;
 
-            Vector2 input = Vector2.zero;
-            if (kb.wKey.isPressed || kb.upArrowKey.isPressed) input.y += 1f;
-            if (kb.sKey.isPressed || kb.downArrowKey.isPressed) input.y -= 1f;
-            if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) input.x += 1f;
-            if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) input.x -= 1f;
+            Keyboard kb = Keyboard.current;
+            if (kb != null)
+            {
+                if (kb.wKey.isPressed || kb.upArrowKey.isPressed) input.y += 1f;
+                if (kb.sKey.isPressed || kb.downArrowKey.isPressed) input.y -= 1f;
+                if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) input.x += 1f;
+                if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) input.x -= 1f;
+            }
+
             return Vector2.ClampMagnitude(input, 1f);
         }
 

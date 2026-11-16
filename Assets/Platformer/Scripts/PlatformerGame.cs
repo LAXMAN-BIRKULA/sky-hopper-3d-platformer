@@ -107,11 +107,18 @@ namespace SkyHopper
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            if (deathPanel != null) deathPanel.SetActive(true);
+            if (deathPanel != null)
+            {
+                deathPanel.SetActive(true);
+                // No keyboard on a phone: the whole screen becomes the retry button.
+                if (MobileInput.Active) MakeTappable(deathPanel);
+            }
             if (finalScoreText != null)
                 finalScoreText.text = "FINAL SCORE   " + Score;
             if (deathHintText != null)
-                deathHintText.text = "Press  R  or  Space  to restart";
+                deathHintText.text = MobileInput.Active
+                    ? "Tap anywhere to restart"
+                    : "Press  R  or  Space  to restart";
 
             Sfx.Play(Sfx.DeathClip, transform.position, 0.7f);
         }
@@ -140,6 +147,23 @@ namespace SkyHopper
             Scene scene = SceneManager.GetActiveScene();
             if (scene.buildIndex >= 0) SceneManager.LoadScene(scene.buildIndex);
             else SceneManager.LoadScene(scene.name);
+        }
+
+        /// <summary>Adds a transparent full-screen tap target on top of the death panel.</summary>
+        static void MakeTappable(GameObject panel)
+        {
+            if (panel == null || panel.transform.Find("TapRestart") != null) return;
+
+            var catcher = new GameObject("TapRestart", typeof(RectTransform)).AddComponent<Image>();
+            catcher.transform.SetParent(panel.transform, false);
+            RectTransform rect = catcher.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            catcher.color = new Color(0f, 0f, 0f, 0f);
+            catcher.raycastTarget = true;
+            catcher.gameObject.AddComponent<TapToRestart>();
         }
 
         void RefreshHud()

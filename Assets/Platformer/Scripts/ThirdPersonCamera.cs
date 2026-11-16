@@ -25,12 +25,29 @@ namespace SkyHopper
         void Start()
         {
             if (target != null) smoothedPivot = target.position + Vector3.up * pivotHeight;
-            if (lockCursorOnStart) Cursor.lockState = CursorLockMode.Locked;
+            if (lockCursorOnStart && !MobileInput.Active) Cursor.lockState = CursorLockMode.Locked;
         }
 
         void LateUpdate()
         {
             if (target == null) return;
+
+            // On-screen controls replace the mouse: dragging the right side of the screen orbits.
+            if (MobileInput.Active)
+            {
+                if (Cursor.lockState != CursorLockMode.None) Cursor.lockState = CursorLockMode.None;
+
+                Vector2 touchLook = MobileInput.LookDelta;
+                MobileInput.LookDelta = Vector2.zero;
+                if (touchLook.sqrMagnitude > 0f)
+                {
+                    yaw += touchLook.x * sensitivity;
+                    pitch = Mathf.Clamp(pitch - touchLook.y * sensitivity, minPitch, maxPitch);
+                }
+
+                UpdateTransform();
+                return;
+            }
 
             Mouse mouse = Mouse.current;
             if (mouse != null)
@@ -54,6 +71,12 @@ namespace SkyHopper
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                 Cursor.lockState = CursorLockMode.None;
 
+            UpdateTransform();
+        }
+
+        /// <summary>Move the camera to the orbit position, pulling in when geometry blocks the view.</summary>
+        void UpdateTransform()
+        {
             Vector3 targetPivot = target.position + Vector3.up * pivotHeight;
             smoothedPivot = Vector3.Lerp(smoothedPivot, targetPivot,
                 1f - Mathf.Exp(-followSharpness * Time.deltaTime));
