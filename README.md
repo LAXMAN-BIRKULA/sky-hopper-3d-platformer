@@ -2,6 +2,8 @@
 
 A stylized third-person 3D platformer built with Unity 6 and the Universal Render Pipeline. Hop across floating platforms, collect every coin, and finish two hand-built courses. The same build plays with a keyboard and mouse on desktop or with on-screen controls on a phone.
 
+**This is my first project in game development.** It began as a learning exercise in Unity and grew into a complete, playable game with two levels, menus, touch controls and a macOS and browser build.
+
 ## Features
 
 - **Two levels plus a level select menu.** Level 1 is the introductory course; Level 2 is a longer ascending course with 13 coins.
