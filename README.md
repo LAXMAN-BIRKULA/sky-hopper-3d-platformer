@@ -4,6 +4,8 @@ A stylized third-person 3D platformer built with Unity 6 and the Universal Rende
 
 **This is my first project in game development.** It began as a learning exercise in Unity and grew into a complete, playable game with two levels, menus, touch controls and a macOS and browser build.
 
+**Play it now:** [Sky Hopper on GitHub Pages](https://laxman-birkula.github.io/sky-hopper-3d-platformer/) — no Unity install needed. Works on desktop browsers and phones.
+
 ## Features
 
 - **Two levels plus a level select menu.** Level 1 is the introductory course; Level 2 is a longer ascending course with 13 coins.
