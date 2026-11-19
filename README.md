@@ -6,6 +6,14 @@ A stylized third-person 3D platformer built with Unity 6 and the Universal Rende
 
 **Play it now:** [Sky Hopper on GitHub Pages](https://laxman-birkula.github.io/sky-hopper-3d-platformer/) — no Unity install needed. Works on desktop browsers and phones.
 
+### Screenshots
+
+![Level 1 course in Sky Hopper](Screenshots/phase3_course.png)
+
+| Pause menu | Touch controls |
+| --- | --- |
+| ![Pause menu](Screenshots/phase13_pause_menu.png) | ![Touch HUD](Screenshots/phase13_touch_hud.png) |
+
 ## Features
 
 - **Two levels plus a level select menu.** Level 1 is the introductory course; Level 2 is a longer ascending course with 13 coins.
@@ -83,6 +91,12 @@ The SSAO renderer feature was deliberately removed from the URP renderer: its sh
 | `Assets/Resources/Textures/` | Ground, stone, wood and fabric textures, with credits |
 | `Assets/Settings/` | URP assets and WebGL build profiles |
 | `Screenshots/` | Captures of the menus, touch HUD and pause screen |
+
+## What I learned
+
+- **Feel matters more than speed.** Coyote time, jump buffering and air control made the character much easier to handle, and matching the run animation's playback rate to actual world speed removed foot sliding.
+- **Debug builds and player builds are different targets.** The SSAO renderer feature worked in the Editor but its shaders were stripped in players, producing a render-loop crash; isolating and removing it was the fix.
+- **One build can serve several inputs.** Generating the touch UI at runtime and sharing an input layer between keyboard, mouse and touch kept the scenes simple and let the same WebGL build work on phones.
 
 ## Credits
 
