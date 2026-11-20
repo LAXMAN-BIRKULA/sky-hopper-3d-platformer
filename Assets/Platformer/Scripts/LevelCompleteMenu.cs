@@ -29,31 +29,70 @@ namespace SkyHopper
 
         void OnEnable()
         {
+            bool mobile = MobileInput.IsTouchDevice;
+
             if (nextButton != null) nextButton.gameObject.SetActive(HasNext);
+            // QUIT GAME blanks the browser tab, which looks broken on touch devices.
+            if (quitGameButton != null) quitGameButton.gameObject.SetActive(!mobile);
 
-            // Keep whichever buttons are visible centered in one row (level 2 has no NEXT).
             var row = new List<Button>(4);
-            if (HasNext) row.Add(nextButton);
-            row.Add(restartButton);
-            row.Add(quitButton);
-            if (quitGameButton != null) row.Add(quitGameButton);
+            if (HasNext && nextButton != null) row.Add(nextButton);
+            if (restartButton != null) row.Add(restartButton);
+            if (quitButton != null) row.Add(quitButton);
+            if (!mobile && quitGameButton != null && quitGameButton.gameObject.activeSelf) row.Add(quitGameButton);
 
-            const float spacing = 380f;
-            for (int i = 0; i < row.Count; i++)
+            if (mobile)
             {
-                if (row[i] == null) continue;
-                var rt = (RectTransform)row[i].transform;
-                rt.anchoredPosition = new Vector2((i - (row.Count - 1) * 0.5f) * spacing, rt.anchoredPosition.y);
+                // A single wide column is touch-friendly and cannot overlap like a row.
+                const float firstY = -120f;
+                const float stepY = 130f;
+                for (int i = 0; i < row.Count; i++)
+                {
+                    var rt = (RectTransform)row[i].transform;
+                    rt.anchorMin = new Vector2(0.5f, 0.5f);
+                    rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.sizeDelta = new Vector2(700f, 120f);
+                    rt.anchoredPosition = new Vector2(0f, firstY - i * stepY);
+                }
+
+                if (hintText != null)
+                {
+                    var hintRect = (RectTransform)hintText.transform;
+                    hintRect.anchoredPosition = new Vector2(0f, firstY - row.Count * stepY - 10f);
+                }
+            }
+            else
+            {
+                // Desktop keeps the authored horizontal row, centered by actual button width.
+                const float spacing = 380f;
+                for (int i = 0; i < row.Count; i++)
+                {
+                    var rt = (RectTransform)row[i].transform;
+                    rt.anchorMin = new Vector2(0.5f, 0.5f);
+                    rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.anchoredPosition = new Vector2((i - (row.Count - 1) * 0.5f) * spacing, -205f);
+                }
+
+                if (hintText != null)
+                {
+                    var hintRect = (RectTransform)hintText.transform;
+                    hintRect.anchoredPosition = new Vector2(0f, -320f);
+                }
             }
 
             if (hintText != null)
-                hintText.text = HasNext
-                    ? "N  next      R  restart      L  levels      Q  quit"
-                    : "R  restart      L  levels      Q  quit";
+                hintText.text = mobile
+                    ? (HasNext ? "Tap NEXT  •  RESTART  •  LEVELS" : "Tap RESTART  •  LEVELS")
+                    : (HasNext
+                        ? "N  next      R  restart      L  levels      Q  quit"
+                        : "R  restart      L  levels      Q  quit");
 
             // Select the first choice so arrows + Enter also work without a mouse.
-            if (EventSystem.current != null)
-                EventSystem.current.SetSelectedGameObject((HasNext ? nextButton : restartButton).gameObject);
+            Button first = HasNext && nextButton != null ? nextButton : restartButton;
+            if (EventSystem.current != null && first != null && first.gameObject.activeSelf)
+                EventSystem.current.SetSelectedGameObject(first.gameObject);
         }
 
         void OnDisable()

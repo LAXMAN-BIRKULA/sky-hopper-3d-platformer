@@ -111,6 +111,8 @@ namespace SkyHopper
             foreach (Button button in buttons)
             {
                 if (button == null || button.gameObject == null) continue;
+                // The win screen owns its own responsive column layout in LevelCompleteMenu.
+                if (button.transform.parent != null && button.transform.parent.name == "WinPanel") continue;
 
                 Text label = button.GetComponentInChildren<Text>(true);
                 string labelText = label != null ? label.text ?? string.Empty : string.Empty;
