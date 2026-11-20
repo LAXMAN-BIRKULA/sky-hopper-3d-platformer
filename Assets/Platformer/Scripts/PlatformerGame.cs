@@ -51,8 +51,20 @@ namespace SkyHopper
 
         void Start()
         {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            // Browsers only grant pointer lock from a real user gesture. Starting locked
+            // makes WebGL request it during scene load, which Chrome rejects and leaves the
+            // cursor hidden with the UI appearing frozen. The camera locks on first click.
+            if (Application.platform != RuntimePlatform.WebGLPlayer)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+
             if (deathPanel != null) deathPanel.SetActive(false);
             if (winPanel != null) winPanel.SetActive(false);
             RefreshHud();
@@ -142,8 +154,8 @@ namespace SkyHopper
 
         public void Restart()
         {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
             Scene scene = SceneManager.GetActiveScene();
             if (scene.buildIndex >= 0) SceneManager.LoadScene(scene.buildIndex);
             else SceneManager.LoadScene(scene.name);

@@ -93,8 +93,9 @@ namespace SkyHopper
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            if (EventSystem.current != null)
-                EventSystem.current.SetSelectedGameObject(ResumeButton.gameObject);
+            Button resume = ResumeButton;
+            if (EventSystem.current != null && resume != null)
+                EventSystem.current.SetSelectedGameObject(resume.gameObject);
         }
 
         public void Close()

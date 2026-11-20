@@ -27,6 +27,23 @@ namespace SkyHopper
 
         public static bool Active => TouchControls.Exists;
 
+        /// <summary>
+        /// True when this run should use the touch layout. Kept separate from Active so UI
+        /// styling can be applied before the touch-control object has finished booting.
+        /// </summary>
+        public static bool IsTouchDevice
+        {
+            get
+            {
+                string url = Application.absoluteURL ?? string.Empty;
+                if (url.Contains("touch=0")) return false;
+                if (url.Contains("touch=1")) return true;
+                return Application.isMobilePlatform ||
+                       SystemInfo.deviceType == DeviceType.Handheld ||
+                       (Touchscreen.current != null && Touchscreen.current.enabled);
+            }
+        }
+
         public static void Reset()
         {
             Move = Vector2.zero;
@@ -53,14 +70,7 @@ namespace SkyHopper
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Bootstrap()
         {
-            string url = Application.absoluteURL ?? string.Empty;
-            if (url.Contains("touch=0")) return;
-
-            bool touch = Application.isMobilePlatform ||
-                         SystemInfo.deviceType == DeviceType.Handheld ||
-                         (Touchscreen.current != null && Touchscreen.current.enabled);
-            if (!touch && !url.Contains("touch=1")) return;
-
+            if (!MobileInput.IsTouchDevice) return;
             Ensure();
         }
 

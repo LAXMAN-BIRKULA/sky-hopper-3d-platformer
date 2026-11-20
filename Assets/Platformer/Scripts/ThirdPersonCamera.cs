@@ -25,7 +25,10 @@ namespace SkyHopper
         void Start()
         {
             if (target != null) smoothedPivot = target.position + Vector3.up * pivotHeight;
-            if (lockCursorOnStart && !MobileInput.Active) Cursor.lockState = CursorLockMode.Locked;
+            // WebGL cannot lock the cursor during scene load (no user gesture). The left-click
+            // handler below locks it on the first real click instead.
+            if (lockCursorOnStart && !MobileInput.Active && Application.platform != RuntimePlatform.WebGLPlayer)
+                Cursor.lockState = CursorLockMode.Locked;
         }
 
         void LateUpdate()
@@ -64,13 +67,13 @@ namespace SkyHopper
                     distance = Mathf.Clamp(distance - scroll * 0.01f, minDistance, maxDistance);
 
                 if (mouse.leftButton.wasPressedThisFrame &&
-                    Cursor.lockState != CursorLockMode.Locked && !PlatformerGame.IsDead && !PlatformerGame.IsWon)
+                    Cursor.lockState != CursorLockMode.Locked &&
+                    !PlatformerGame.IsDead && !PlatformerGame.IsWon && !PauseMenu.IsPaused)
                     Cursor.lockState = CursorLockMode.Locked;
             }
 
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-                Cursor.lockState = CursorLockMode.None;
-
+            // Escape is owned by PauseMenu. Handling it here too raced with PauseMenu.Close()
+            // and immediately unlocked the cursor again on the same frame.
             UpdateTransform();
         }
 
